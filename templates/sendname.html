@@ -34,6 +34,7 @@
         cursor: pointer;
     }
 </style>
+
 <div class="text-center">
     <button class="btn btn-success" id="openModalBtn">Получить код упаковки</button>
 </div>
@@ -53,49 +54,69 @@
     var modal = document.getElementById("myModal");
     var btn = document.getElementById("openModalBtn");
     var span = document.getElementsByClassName("close")[0];
+    var resultDiv = document.getElementById('result');
+    var productNameInput = document.getElementById('productName');
 
-    // Открытие модального окна при клике на кнопку
+    // Открытие модального окна
     btn.onclick = function() {
         modal.style.display = "block";
     }
 
-    // Закрытие модального окна при клике на крестик
+    // Закрытие модального окна
     span.onclick = function() {
         modal.style.display = "none";
-        document.getElementById('result').innerText = ''; // Очистка результата
+        resultDiv.innerText = ''; // Очистка результата
+        productNameInput.value = ''; // Очистка поля ввода
     }
 
     // Закрытие модального окна при клике вне его
     window.onclick = function(event) {
-        if (event.target == modal) {
+        if (event.target === modal) {
             modal.style.display = "none";
+            resultDiv.innerText = '';
+            productNameInput.value = '';
         }
     }
 
     // Обработка клика по кнопке "Найти"
     document.getElementById('findBtn').onclick = function() {
-        var productName = document.getElementById('productName').value;
+        var productName = productNameInput.value.trim();
         if (productName) {
             fetch(`https://tasnif.soliq.uz/api/cls-api/mxik/search-subposition?search_text=${productName}&page=0&size=15&lang=ru`)
             .then(response => response.json())
             .then(data => {
                 if (data.errors) {
-                    document.getElementById('result').innerText = 'Ошибка: ' + data.errors;
+                    resultDiv.innerText = 'Ошибка: ' + data.errors;
                 } else if (data.data && data.data.content && data.data.content.length > 0) {
-                    var content = data.data.content[0];  // берем первый элемент из массива
-                    document.getElementById('result').innerText = `ИКПУ: ${content.mxikCode}, Наименование: ${content.positionName}`;
+                    var content = data.data.content[0];
+                    var mxikCode = content.mxikCode;
+                    var positionName = content.positionName;
+
+                    // Второй запрос для получения кода упаковки
+                    fetch(`https://tasnif.soliq.uz/api/cls-api/mxik/get/by-mxik?mxikCode=${mxikCode}&lang=ru`)
+                    .then(response => response.json())
+                    .then(packData => {
+                        if (packData.data && Array.isArray(packData.data.packages) && packData.data.packages.length > 0) {
+                            var packageCode = packData.data.packages[0].code;
+                            resultDiv.innerText = `ИКПУ: ${mxikCode}, Наименование: ${positionName}, Код упаковки: ${packageCode}`;
+                        } else {
+                            resultDiv.innerText = `ИКПУ: ${mxikCode}, Наименование: ${positionName}, Упаковка не найдена.`;
+                        }
+                    })
+                    .catch(error => {
+                        resultDiv.innerText = 'Ошибка запроса упаковки: ' + error.message;
+                    });
                 } else {
-                    document.getElementById('result').innerText = 'Продукт не найден';
+                    resultDiv.innerText = 'Продукт не найден.';
                 }
             })
             .catch(error => {
-                document.getElementById('result').innerText = 'Ошибка запроса: ' + error.message;
+                resultDiv.innerText = 'Ошибка запроса: ' + error.message;
             });
         } else {
-            document.getElementById('result').innerText = 'Введите название продукта';
+            resultDiv.innerText = 'Пожалуйста, введите название продукта.';
         }
     }
-
 </script>
 
 {% endblock %}

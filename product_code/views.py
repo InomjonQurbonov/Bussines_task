@@ -13,12 +13,10 @@ class SendProductName(View):
     template_name = 'sendname.html'
 
     def get(self, request, *args, **kwargs):
-        # Отображение страницы с формой
         return render(request, self.template_name)
 
     def get_package_code(self, product_name):
         try:
-            # 1. Поиск ИКПУ
             search_url = f"https://tasnif.soliq.uz/api/cls-api/mxik/search-subposition?search_text={product_name}&page=0&size=15&lang=ru"
             search_response = requests.get(search_url)
             search_data = search_response.json()
@@ -28,7 +26,6 @@ class SendProductName(View):
 
             mxik_code = search_data['content'][0]['mxikCode']
 
-            # 2. Получение кода упаковки
             package_url = f"https://tasnif.soliq.uz/api/cls-api/mxik/get/by-mxik?mxikCode={mxik_code}&lang=ru"
             package_response = requests.get(package_url)
             package_data = package_response.json()
@@ -38,7 +35,6 @@ class SendProductName(View):
 
             package_code = package_data['packages'][0]['packageCode']
 
-            # Возвращаем ИКПУ и код упаковки
             return mxik_code, package_code
 
         except Exception as e:
@@ -53,11 +49,8 @@ class SendProductName(View):
         mxik_code, result = self.get_package_code(product_name)
 
         if mxik_code and isinstance(result, str):
-            # Продукт найден, но ошибка с упаковочным кодом
             return JsonResponse({'mxikCode': mxik_code, 'error': result})
         elif mxik_code:
-            # Продукт и код упаковки найдены
             return JsonResponse({'mxikCode': mxik_code, 'packageCode': result})
         else:
-            # Ошибка с поиском продукта
             return JsonResponse({'error': result})
