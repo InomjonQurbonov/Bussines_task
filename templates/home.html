@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Home
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid p-5 bg-light text-primary text-center">
+        <h1>Сайт для получение или поиски код вашы продукты</h1>
+        <p>Этот сайт предназначен для того, чтобы вы могли получить код продукта и ИКПУ с сайта Soliq. Нажмите кнопку, чтобы запустить сайт</p>
+    </div>
+    <br>
+    <br>
+    <br>
+    <div class="container-fluid text-center">
+        <a class="btn btn-success text-white" href="{% url 'get_package_code' %}">
+            <h1>Получить код упаковки</h1>
+        </a>
+    </div>
+    <br>
+    <br>
+    <br>
+{% endblock %}
